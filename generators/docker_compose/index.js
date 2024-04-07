@@ -91,105 +91,116 @@ export default class GeneratorDockerCompose extends Generator {
   configuring() {
     const { useDockerCompose, databaseName } = this.#answers
 
-    if (useDockerCompose) {
+    if (useDockerCompose && databaseName) {
       this.#databaseConfiguration = databaseConfigurations[databaseName]
       this.#databaseService = databaseServiceConfigurations[databaseName]
     }
   }
 
   writing() {
-    const { useDockerCompose } = this.#answers
+    const { useDockerCompose, databaseName } = this.#answers
 
     if (useDockerCompose) {
-      const dbPort = this.#databaseConfiguration.getPort()
-      const dbUsername = this.#databaseConfiguration.getUsername()
-      const dbPassword = this.#databaseConfiguration.getPassword()
-      const dbMyDatabase = this.#databaseConfiguration.getMyDatabase()
-
-      const databaseDockerImage = this.#databaseService.getDockerImage()
-      const databaseVolumen = this.#databaseService.getVolumen()
-      const databaseVolumenMapped = this.#databaseService.getVolumenMapped()
-      const databaseEnvironmentVariables =
-        this.#databaseService.getDatabaseEnvironmentVariables()
-
-      const databaseUrl = DatabaseUrl.getDatabaseUrlWithoutArguments(
-        this.#databaseConfiguration,
-      )
-
-      this.fs.copy(
-        this.templatePath('database/.dockerignore'),
-        this.destinationPath('database/.dockerignore'),
-      )
-      this.fs.copyTpl(
-        this.templatePath('database/.env'),
-        this.destinationPath('database/.env'),
-        {
-          environmentVariables: databaseEnvironmentVariables,
-        },
-      )
-      this.fs.copyTpl(
-        this.templatePath('database/.env.example'),
-        this.destinationPath('database/.env.example'),
-        {
-          environmentVariables: databaseEnvironmentVariables,
-        },
-      )
-      this.fs.copyTpl(
-        this.templatePath('database/Dockerfile'),
-        this.destinationPath('database/Dockerfile'),
-        {
-          databaseImage: databaseDockerImage,
-        },
-      )
       this.fs.copy(this.templatePath('.env'), this.destinationPath('.env'))
       this.fs.copy(
         this.templatePath('.env.example'),
         this.destinationPath('.env.example'),
       )
-      this.fs.copyTpl(
-        this.templatePath(`docker-compose.yml`),
-        this.destinationPath('docker-compose.yml'),
-        {
-          databaseVolumenMapped,
-          databaseVolumen,
-        },
-      )
 
-      const databaseEnvVariablesForApi = [
-        {
-          name: 'DB_USERNAME',
-          value: `${dbUsername}`,
-        },
-        {
-          name: 'DB_PASSWORD',
-          value: `${dbPassword}`,
-        },
-        {
-          name: 'DB_NAME',
-          value: `${dbMyDatabase}`,
-        },
-        {
-          name: 'DB_HOST',
-          value: 'database',
-        },
-        {
-          name: 'DB_PORT',
-          value: `${dbPort}`,
-        },
-      ]
+      if (!databaseName) {
+        this.fs.copy(
+          this.templatePath('docker-compose.without-database-service.yml'),
+          this.destinationPath('docker-compose.yml'),
+        )
+      } else {
+        const dbPort = this.#databaseConfiguration.getPort()
+        const dbUsername = this.#databaseConfiguration.getUsername()
+        const dbPassword = this.#databaseConfiguration.getPassword()
+        const dbMyDatabase = this.#databaseConfiguration.getMyDatabase()
 
-      let envFile = this.fs.read(this.destinationPath('api/.env'))
+        const databaseDockerImage = this.#databaseService.getDockerImage()
+        const databaseVolumen = this.#databaseService.getVolumen()
+        const databaseVolumenMapped = this.#databaseService.getVolumenMapped()
+        const databaseEnvironmentVariables =
+          this.#databaseService.getDatabaseEnvironmentVariables()
 
-      for (const databaseEnvVariableForApi of databaseEnvVariablesForApi) {
-        const name = databaseEnvVariableForApi.name
-        const value = databaseEnvVariableForApi.value
+        const databaseUrl = DatabaseUrl.getDatabaseUrlWithoutArguments(
+          this.#databaseConfiguration,
+        )
 
-        envFile = envFile.replace(`${name}=`, `${name}=${value}`)
+        this.fs.copy(
+          this.templatePath('database/.dockerignore'),
+          this.destinationPath('database/.dockerignore'),
+        )
+        this.fs.copyTpl(
+          this.templatePath('database/.env'),
+          this.destinationPath('database/.env'),
+          {
+            environmentVariables: databaseEnvironmentVariables,
+          },
+        )
+        this.fs.copyTpl(
+          this.templatePath('database/.env.example'),
+          this.destinationPath('database/.env.example'),
+          {
+            environmentVariables: databaseEnvironmentVariables,
+          },
+        )
+        this.fs.copyTpl(
+          this.templatePath('database/Dockerfile'),
+          this.destinationPath('database/Dockerfile'),
+          {
+            databaseImage: databaseDockerImage,
+          },
+        )
+        this.fs.copyTpl(
+          this.templatePath(`docker-compose.with-database-service.yml`),
+          this.destinationPath('docker-compose.yml'),
+          {
+            databaseVolumenMapped,
+            databaseVolumen,
+          },
+        )
+
+        const databaseEnvVariablesForApi = [
+          {
+            name: 'DB_USERNAME',
+            value: `${dbUsername}`,
+          },
+          {
+            name: 'DB_PASSWORD',
+            value: `${dbPassword}`,
+          },
+          {
+            name: 'DB_NAME',
+            value: `${dbMyDatabase}`,
+          },
+          {
+            name: 'DB_HOST',
+            value: 'database',
+          },
+          {
+            name: 'DB_PORT',
+            value: `${dbPort}`,
+          },
+        ]
+
+        let envFile = this.fs.read(this.destinationPath('api/.env'))
+
+        for (const databaseEnvVariableForApi of databaseEnvVariablesForApi) {
+          const name = databaseEnvVariableForApi.name
+          const value = databaseEnvVariableForApi.value
+
+          envFile = envFile.replace(`${name}=`, `${name}=${value}`)
+        }
+
+        envFile = envFile.replace(
+          'DATABASE_URL=',
+          `DATABASE_URL=${databaseUrl}`,
+        )
+
+        this.fs.write(this.destinationPath('api/.env'), envFile)
       }
-
-      envFile = envFile.replace('DATABASE_URL=', `DATABASE_URL=${databaseUrl}`)
-
-      this.fs.write(this.destinationPath('api/.env'), envFile)
     }
   }
 }
