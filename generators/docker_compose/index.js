@@ -4,6 +4,7 @@ import { DataProcessor } from '../lib/index.js'
 export default class GeneratorDockerCompose extends Generator {
   #answers
   #databaseService = {}
+  #apiEnvironmentVariables = {}
   #databaseEnvironmentVariables = ''
 
   constructor(args, opts) {
@@ -90,6 +91,10 @@ export default class GeneratorDockerCompose extends Generator {
             volumenMapped: '\n      - mysql_data:/var/lib/mysql',
             volumen: '\n  mysql_data:',
           }
+          this.#apiEnvironmentVariables = {
+            dbPort: 3306,
+            dbDialect: 'mysql',
+          }
           this.#databaseEnvironmentVariables =
             'MYSQL_ROOT_PASSWORD=admin\nMYSQL_USER=admin\nMYSQL_PASSWORD=admin\nMYSQL_DATABASE=api\n'
           break
@@ -100,6 +105,10 @@ export default class GeneratorDockerCompose extends Generator {
               '\n      - maria_db_data:/var/lib/mysql\n      - maria_db_backup:/backup',
             volumen: '\n  maria_db_data:\n  maria_db_backup:',
           }
+          this.#apiEnvironmentVariables = {
+            dbPort: 3306,
+            dbDialect: 'mariadb',
+          }
           this.#databaseEnvironmentVariables =
             'MARIADB_ROOT_PASSWORD=admin\nMARIADB_USER=admin\nMARIADB_PASSWORD=admin\nMARIADB_DATABASE=api\n'
           break
@@ -108,6 +117,10 @@ export default class GeneratorDockerCompose extends Generator {
             image: 'postgres',
             volumenMapped: '\n      - pg_data:/var/lib/postgresql/data',
             volumen: '\n  pg_data:',
+          }
+          this.#apiEnvironmentVariables = {
+            dbPort: 5432,
+            dbDialect: 'postgres',
           }
           this.#databaseEnvironmentVariables =
             'POSTGRES_USER=admin\nPOSTGRES_PASSWORD=admin\nPOSTGRES_DB=api\n'
@@ -121,6 +134,7 @@ export default class GeneratorDockerCompose extends Generator {
 
     if (useDockerCompose) {
       const databaseEnvironmentVariables = this.#databaseEnvironmentVariables
+      const { dbPort, dbDialect } = this.#apiEnvironmentVariables
       const { image, volumenMapped, volumen } = this.#databaseService
 
       this.fs.copy(
@@ -161,6 +175,49 @@ export default class GeneratorDockerCompose extends Generator {
           databaseVolumen: volumen,
         },
       )
+
+      const databaseEnvVariablesForApi = [
+        {
+          name: 'DB_USERNAME',
+          value: 'admin',
+        },
+        {
+          name: 'DB_PASSWORD',
+          value: 'admin',
+        },
+        {
+          name: 'DB_NAME',
+          value: 'api',
+        },
+        {
+          name: 'DB_HOST',
+          value: 'database',
+        },
+        {
+          name: 'DB_PORT',
+          value: `${dbPort}`,
+        },
+        {
+          name: 'DB_DIALECT',
+          value: `${dbDialect}`,
+        },
+      ]
+
+      let envFile = this.fs.read(this.destinationPath('api/.env'))
+
+      for (const databaseEnvVariableForApi of databaseEnvVariablesForApi) {
+        const name = databaseEnvVariableForApi.name
+        const value = databaseEnvVariableForApi.value
+
+        envFile = envFile.replace(`${name}=`, `${name}=${value}`)
+      }
+
+      envFile = envFile.replace(
+        'DATABASE_URL=',
+        `DATABASE_URL=${dbDialect}://admin:admin@database:${dbPort}/api`,
+      )
+
+      this.fs.write(this.destinationPath('api/.env'), envFile)
     }
   }
 }
