@@ -212,9 +212,11 @@ export default class GeneratorDockerCompose extends Generator {
         envFile = envFile.replace(`${name}=`, `${name}=${value}`)
       }
 
+      const databaseConnector = dbDialect === 'mariadb' ? 'mysql' : dbDialect
+
       envFile = envFile.replace(
         'DATABASE_URL=',
-        `DATABASE_URL=${dbDialect}://admin:admin@database:${dbPort}/api`,
+        `DATABASE_URL=${databaseConnector}://admin:admin@database:${dbPort}/api`,
       )
 
       this.fs.write(this.destinationPath('api/.env'), envFile)
