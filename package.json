@@ -14,6 +14,14 @@
     "./app": {
       "types": "./dist/types/generators/app/index.d.ts",
       "import": "./dist/generators/app/index.js"
+    },
+    "./docker": {
+      "types": "./dist/types/generators/docker/index.d.ts",
+      "import": "./dist/generators/docker/index.js"
+    },
+    "./docker_compose": {
+      "types": "./dist/types/generators/docker_compose/index.d.ts",
+      "import": "./dist/generators/docker_compose/index.js"
     }
   },
   "keywords": [
