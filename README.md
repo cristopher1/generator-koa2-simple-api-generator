@@ -24,6 +24,8 @@ If you want to use a tool with more settings, see [generator-koa2-api-generator]
 
 Example of a generator created by `generator-koa2-simple-api-generator`:
 
+![generator-koa2-simple-api-generator-example](https://github.com/cristopher1/generator-koa2-simple-api-generator/assets/21159930/3d8ef769-5180-4419-bf3c-c441e9413744)
+
 ### [Index](#index)
 
 - [Installation](#installation)
@@ -88,7 +90,7 @@ The generator-koa2-simple-api-generator include various options, these are:
 | nodeVersion       | Number  |   16    | Node version used in DockerFile. (FROM nodeVersion). Recommended to use node 16, 18, 20 or 21                       | `yo koa2-simple-api-generator project_name --nodeVersion=21`                        |
 | projectFolderName | String  |   api   | Project folder name used in DockerFile. (WORKDIR /usr/src/projectFolderName)                                        | `yo koa2-simple-api-generator project_name --projectFolderName=project_folder_name` |
 | useDockerCompose  | String  |  false  | Add Docker Compose support.                                                                                         | `yo koa2-simple-api-generator project_name --useDockerCompose`                      |
-| databaseName      | String  |  null   | Select the database to which the application will connect. Accepts the values: postgresql, mysql, mariadb, mongodb. | `yo koa2-simple-api-generator project_name --databaseName=postgresql`               |
+| databaseName      | String  |  null   | Select the database to which the application will connect. Accepts the values: postgresql, mysql, mariadb and mongodb. | `yo koa2-simple-api-generator project_name --databaseName=postgresql`               |
 
 ## <a id="structure"></a> Project structure
 
