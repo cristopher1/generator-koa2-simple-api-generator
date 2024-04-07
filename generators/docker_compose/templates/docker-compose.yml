@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  database:
+    build:
+      context: database
+    env_file:
+      - database/.env
+    restart: always
+    volumes: <%- databaseVolumenMapped %>
+
+  api:
+    build:
+      context: api
+      target: ${API_TARGET}
+    env_file:
+      - api/.env
+    environment:
+      - PORT=${CONTAINER_PORT}
+    ports:
+      - '${HOST_PORT}:${CONTAINER_PORT}'
+
+volumes: <%- databaseVolumen %>
