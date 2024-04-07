@@ -1,5 +1,8 @@
 {
-  "include": ["generators/**/index.js"],
+  "include": [
+    "generators/**/index.js",
+    "generators/docker_compose/generator_components/database_configuration/index.js"
+  ],
   "exclude": ["node_modules", "generators/**/templates"],
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig to read more about this file */
