@@ -1,16 +1,11 @@
-import GeneratorBabel from '../../babel/index.js'
 import GeneratorEslint from '../../eslint/index.js'
 import GeneratorGit from '../../git/index.js'
 import GeneratorHusky from '../../husky/index.js'
 import GeneratorLintStaged from '../../lintstaged/index.js'
 import GeneratorPrettier from '../../prettier/index.js'
 import GeneratorCommitLint from '../../commitlint/index.js'
-import GeneratorOpenApi from '../../openapi/index.js'
-import GeneratorSwagger from '../../swagger/index.js'
-import GeneratorSequelize from '../../sequelize/index.js'
 import GeneratorDocker from '../../docker/index.js'
 import GeneratorDockerCompose from '../../docker_compose/index.js'
-import GeneratorJsonSchemas from '../../json_schemas/index.js'
 
 import { createRequire } from 'node:module'
 
@@ -52,38 +47,10 @@ export class GeneratorProvider {
     }
   }
 
-  getBabelGenerator() {
-    return {
-      Generator: GeneratorBabel,
-      path: require.resolve('../../babel'),
-    }
-  }
-
   getCommitLintGenerator() {
     return {
       Generator: GeneratorCommitLint,
       path: require.resolve('../../commitlint'),
-    }
-  }
-
-  getOpenApiGenerator() {
-    return {
-      Generator: GeneratorOpenApi,
-      path: require.resolve('../../openapi'),
-    }
-  }
-
-  getSwaggerGenerator() {
-    return {
-      Generator: GeneratorSwagger,
-      path: require.resolve('../../swagger'),
-    }
-  }
-
-  getSequelizeGenerator() {
-    return {
-      Generator: GeneratorSequelize,
-      path: require.resolve('../../sequelize'),
     }
   }
 
@@ -98,13 +65,6 @@ export class GeneratorProvider {
     return {
       Generator: GeneratorDockerCompose,
       path: require.resolve('../../docker_compose'),
-    }
-  }
-
-  getJsonSchemasGenerator() {
-    return {
-      Generator: GeneratorJsonSchemas,
-      path: require.resolve('../../json_schemas'),
     }
   }
 }
