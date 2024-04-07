@@ -1,6 +1,6 @@
 {
   "name": "generator-koa2-simple-api-generator",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Yeoman generator to create a simple base structure for api rest based in koa2 framework.",
   "homepage": "https://github.com/cristopher1/generator-koa2-simple-api-generator",
   "type": "module",
