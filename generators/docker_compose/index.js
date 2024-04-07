@@ -1,11 +1,15 @@
 import Generator from 'yeoman-generator'
 import { DataProcessor } from '../lib/index.js'
+import {
+  databaseConfigurations,
+  DatabaseUrl,
+} from './generator_components/database_configuration/index.js'
+import { databaseServiceConfigurations } from './generator_components/database_service_configuration/index.js'
 
 export default class GeneratorDockerCompose extends Generator {
   #answers
-  #databaseService = {}
-  #apiEnvironmentVariables = {}
-  #databaseEnvironmentVariables = ''
+  #databaseConfiguration
+  #databaseService
 
   constructor(args, opts) {
     super(args, opts)
@@ -61,6 +65,10 @@ export default class GeneratorDockerCompose extends Generator {
             value: 'mariadb',
           },
           {
+            name: 'MongoDB',
+            value: 'mongodb',
+          },
+          {
             name: 'Do not select any',
             value: null,
           },
@@ -84,48 +92,8 @@ export default class GeneratorDockerCompose extends Generator {
     const { useDockerCompose, databaseName } = this.#answers
 
     if (useDockerCompose) {
-      switch (databaseName) {
-        case 'mysql':
-          this.#databaseService = {
-            image: 'mysql',
-            volumenMapped: '\n      - mysql_data:/var/lib/mysql',
-            volumen: '\n  mysql_data:',
-          }
-          this.#apiEnvironmentVariables = {
-            dbPort: 3306,
-            dbDialect: 'mysql',
-          }
-          this.#databaseEnvironmentVariables =
-            'MYSQL_ROOT_PASSWORD=admin\nMYSQL_USER=admin\nMYSQL_PASSWORD=admin\nMYSQL_DATABASE=api\n'
-          break
-        case 'mariadb':
-          this.#databaseService = {
-            image: 'mariadb',
-            volumenMapped:
-              '\n      - maria_db_data:/var/lib/mysql\n      - maria_db_backup:/backup',
-            volumen: '\n  maria_db_data:\n  maria_db_backup:',
-          }
-          this.#apiEnvironmentVariables = {
-            dbPort: 3306,
-            dbDialect: 'mariadb',
-          }
-          this.#databaseEnvironmentVariables =
-            'MARIADB_ROOT_PASSWORD=admin\nMARIADB_USER=admin\nMARIADB_PASSWORD=admin\nMARIADB_DATABASE=api\n'
-          break
-        default:
-          this.#databaseService = {
-            image: 'postgres',
-            volumenMapped: '\n      - pg_data:/var/lib/postgresql/data',
-            volumen: '\n  pg_data:',
-          }
-          this.#apiEnvironmentVariables = {
-            dbPort: 5432,
-            dbDialect: 'postgres',
-          }
-          this.#databaseEnvironmentVariables =
-            'POSTGRES_USER=admin\nPOSTGRES_PASSWORD=admin\nPOSTGRES_DB=api\n'
-          break
-      }
+      this.#databaseConfiguration = databaseConfigurations[databaseName]
+      this.#databaseService = databaseServiceConfigurations[databaseName]
     }
   }
 
@@ -133,9 +101,20 @@ export default class GeneratorDockerCompose extends Generator {
     const { useDockerCompose } = this.#answers
 
     if (useDockerCompose) {
-      const databaseEnvironmentVariables = this.#databaseEnvironmentVariables
-      const { dbPort, dbDialect } = this.#apiEnvironmentVariables
-      const { image, volumenMapped, volumen } = this.#databaseService
+      const dbPort = this.#databaseConfiguration.getPort()
+      const dbUsername = this.#databaseConfiguration.getUsername()
+      const dbPassword = this.#databaseConfiguration.getPassword()
+      const dbMyDatabase = this.#databaseConfiguration.getMyDatabase()
+
+      const databaseDockerImage = this.#databaseService.getDockerImage()
+      const databaseVolumen = this.#databaseService.getVolumen()
+      const databaseVolumenMapped = this.#databaseService.getVolumenMapped()
+      const databaseEnvironmentVariables =
+        this.#databaseService.getDatabaseEnvironmentVariables()
+
+      const databaseUrl = DatabaseUrl.getDatabaseUrlWithoutArguments(
+        this.#databaseConfiguration,
+      )
 
       this.fs.copy(
         this.templatePath('database/.dockerignore'),
@@ -159,7 +138,7 @@ export default class GeneratorDockerCompose extends Generator {
         this.templatePath('database/Dockerfile'),
         this.destinationPath('database/Dockerfile'),
         {
-          databaseImage: image,
+          databaseImage: databaseDockerImage,
         },
       )
       this.fs.copy(this.templatePath('.env'), this.destinationPath('.env'))
@@ -171,23 +150,23 @@ export default class GeneratorDockerCompose extends Generator {
         this.templatePath(`docker-compose.yml`),
         this.destinationPath('docker-compose.yml'),
         {
-          databaseVolumenMapped: volumenMapped,
-          databaseVolumen: volumen,
+          databaseVolumenMapped,
+          databaseVolumen,
         },
       )
 
       const databaseEnvVariablesForApi = [
         {
           name: 'DB_USERNAME',
-          value: 'admin',
+          value: `${dbUsername}`,
         },
         {
           name: 'DB_PASSWORD',
-          value: 'admin',
+          value: `${dbPassword}`,
         },
         {
           name: 'DB_NAME',
-          value: 'api',
+          value: `${dbMyDatabase}`,
         },
         {
           name: 'DB_HOST',
@@ -196,10 +175,6 @@ export default class GeneratorDockerCompose extends Generator {
         {
           name: 'DB_PORT',
           value: `${dbPort}`,
-        },
-        {
-          name: 'DB_DIALECT',
-          value: `${dbDialect}`,
         },
       ]
 
@@ -212,12 +187,7 @@ export default class GeneratorDockerCompose extends Generator {
         envFile = envFile.replace(`${name}=`, `${name}=${value}`)
       }
 
-      const databaseConnector = dbDialect === 'mariadb' ? 'mysql' : dbDialect
-
-      envFile = envFile.replace(
-        'DATABASE_URL=',
-        `DATABASE_URL=${databaseConnector}://admin:admin@database:${dbPort}/api`,
-      )
+      envFile = envFile.replace('DATABASE_URL=', `DATABASE_URL=${databaseUrl}`)
 
       this.fs.write(this.destinationPath('api/.env'), envFile)
     }
