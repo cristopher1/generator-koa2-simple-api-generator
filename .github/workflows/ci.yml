@@ -1,0 +1,94 @@
+# Workflow to use continuous integration
+
+name: CI
+
+on:
+  push:
+    branches:
+      - development
+      - main
+  pull_request:
+    branches:
+      - development
+
+jobs:
+  test_and_build:
+    name: Test the source code and build the generator-koa2-simple-api-generator generator
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: install dependencies using package-lock.json
+        run: npm ci
+
+      - name: audit
+        run: npm audit
+
+      - name: run linter, formatter and unit tests
+        run: |
+          npm run lint
+          npm run format
+          npm run test
+
+      - name: build the dist folder
+        run: npm run build
+
+      - name: save artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-generator-koa2-simple-api-generator
+          path: |
+            dist
+            LICENSE
+            README.md
+            package.json
+          retention-days: 1
+
+  create_generator:
+    name: Test a generator created by generator-koa2-simple-api-generator generator
+    needs: test_and_build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ['>=18.17.0', '20.x']
+    steps:
+      - name: download dist generator-koa2-simple-api-generator generator
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-generator-koa2-simple-api-generator
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: print node-version
+        run: echo ${{ matrix.node-version }}
+
+      - name: install yeoman
+        run: npm install -g yo
+
+      - name: install dependencies, it does not use the package-lock.json file
+        run: npm install
+
+      - name: link the generator
+        run: npm link
+
+      - name: create a new folder
+        working-directory: ../
+        run: mkdir -p generator_test
+
+      - name: create a new generator
+        working-directory: ../generator_test
+        run: yo koa2-simple-api-generator new_api postgresql --runGitInit --runPackageScripts --useDocker --nodeVersion=21 --projectFolderName=api --useDockerCompose --databaseName=postgresql
+
+      - name: audit
+        run: npm audit
+
+      - name: run linter and formatter
+        working-directory: ../generator_test/api
+        run: |
+          npm run lint
+          npm run format
