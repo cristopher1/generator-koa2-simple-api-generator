@@ -18,6 +18,8 @@
 
 This generator was created using [generator-esmodules-generator](https://www.npmjs.com/package/generator-esmodules-generator) version 1.0.3
 
+If you want to use a tool with more settings, see [generator-koa2-api-generator](https://github.com/cristopher1/generator-koa2-api-generator)
+
 ### What's changed? See [generator-koa2-simple-api-generator releases](https://github.com/cristopher1/generator-koa2-simple-api-generator/releases)
 
 Example of a generator created by `generator-koa2-simple-api-generator`:
