@@ -225,7 +225,7 @@ export default class GeneratorKoa2ApiGenerator extends Generator {
   }
 
   #runGitInit() {
-    console.log('\n********** Run git init command **********\n')
+    this.log('\n********** Run git init command **********\n')
     this.spawnSync('git', ['init'])
   }
 
@@ -249,7 +249,7 @@ export default class GeneratorKoa2ApiGenerator extends Generator {
   }
 
   #runPackageScripts(dependencyManager) {
-    console.log('\n********** Run scripts from package.json **********')
+    this.log('\n********** Run scripts from package.json **********')
     const scriptArguments = [['init'], ['format:fix']]
     for (const args of scriptArguments)
       this.spawnSync(`${dependencyManager}`, ['run', ...args])
