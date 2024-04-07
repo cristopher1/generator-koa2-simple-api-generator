@@ -1,0 +1,16 @@
+env:
+  browser: true
+  es2021: true
+
+extends: ['eslint:recommended', 'standard', 'prettier']
+
+overrides:
+  [
+    {
+      files: ['src/**/*.js'],
+      extends: ['plugin:openapi/recommended'],
+      plugins: ['openapi'],
+    },
+  ]
+
+parserOptions: { ecmaVersion: 'latest', sourceType: 'module' }
